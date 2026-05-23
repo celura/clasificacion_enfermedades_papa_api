@@ -37,14 +37,17 @@ class PotatoDiseaseClassifier:
 
     def _load_tflite(self, model_path: Path) -> None:
         try:
-            from tflite_runtime.interpreter import Interpreter
+            from ai_edge_litert.interpreter import Interpreter
         except ImportError:
             try:
-                from tensorflow.lite.python.interpreter import Interpreter
+                from tflite_runtime.interpreter import Interpreter
             except ImportError as exc:
-                raise ImportError(
-                    "Instala tflite-runtime para ejecutar modelos .tflite sin TensorFlow completo."
-                ) from exc
+                try:
+                    from tensorflow.lite.python.interpreter import Interpreter
+                except ImportError:
+                    raise ImportError(
+                        "Instala ai-edge-litert para ejecutar modelos .tflite sin TensorFlow completo."
+                    ) from exc
 
         self.interpreter = Interpreter(model_path=str(model_path))
         self.interpreter.allocate_tensors()
