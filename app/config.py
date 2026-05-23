@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "API Clasificacion Enfermedades Papa"
     app_version: str = "1.0.0"
-    model_path: str = "ensamble_papa_completo.keras"
+    model_path: str = "ensamble_papa_completo_compatible_dynamic.tflite"
     database_url: str = "sqlite:///./potato_diseases.db"
     model_input_width: int = 224
     model_input_height: int = 224

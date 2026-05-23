@@ -11,24 +11,51 @@ class PotatoDiseaseClassifier:
     def __init__(self) -> None:
         self.settings = get_settings()
         self.model = None
+        self.interpreter = None
+        self.input_details = None
+        self.output_details = None
 
     @property
     def is_loaded(self) -> bool:
-        return self.model is not None
+        return self.model is not None or self.interpreter is not None
 
     def load(self) -> None:
-        if self.model is not None:
+        if self.is_loaded:
             return
 
         model_path = Path(self.settings.model_path)
         if not model_path.exists():
             raise FileNotFoundError(f"No se encontro el modelo en: {model_path}")
 
+        if model_path.suffix.lower() == ".tflite":
+            self._load_tflite(model_path)
+            return
+
         import keras
 
         self.model = keras.models.load_model(model_path, compile=False, safe_mode=False)
 
+    def _load_tflite(self, model_path: Path) -> None:
+        try:
+            from tflite_runtime.interpreter import Interpreter
+        except ImportError:
+            try:
+                from tensorflow.lite.python.interpreter import Interpreter
+            except ImportError as exc:
+                raise ImportError(
+                    "Instala tflite-runtime para ejecutar modelos .tflite sin TensorFlow completo."
+                ) from exc
+
+        self.interpreter = Interpreter(model_path=str(model_path))
+        self.interpreter.allocate_tensors()
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
+
     def _target_size(self) -> tuple[int, int]:
+        if self.input_details:
+            shape = self.input_details[0].get("shape_signature", self.input_details[0]["shape"])
+            if len(shape) >= 4 and shape[1] > 0 and shape[2] > 0:
+                return int(shape[2]), int(shape[1])
         if self.model is not None:
             input_shape = getattr(self.model, "input_shape", None)
             if isinstance(input_shape, list):
@@ -46,7 +73,14 @@ class PotatoDiseaseClassifier:
     def predict(self, image: Image.Image) -> dict:
         self.load()
         batch = self.preprocess(image)
-        raw_prediction = self.model.predict(batch, verbose=0)
+        if self.interpreter is not None:
+            input_detail = self.input_details[0]
+            output_detail = self.output_details[0]
+            self.interpreter.set_tensor(input_detail["index"], batch.astype(input_detail["dtype"]))
+            self.interpreter.invoke()
+            raw_prediction = self.interpreter.get_tensor(output_detail["index"])
+        else:
+            raw_prediction = self.model.predict(batch, verbose=0)
         probabilities = np.asarray(raw_prediction)
 
         if probabilities.ndim > 2:

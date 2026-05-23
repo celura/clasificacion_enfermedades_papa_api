@@ -4,6 +4,6 @@ python-multipart==0.0.20
 SQLAlchemy==2.0.36
 psycopg[binary]==3.2.3
 pydantic-settings==2.7.1
-tensorflow==2.18.0
+tflite-runtime==2.14.0
 pillow==11.0.0
-numpy==2.0.2
+numpy==1.26.4
