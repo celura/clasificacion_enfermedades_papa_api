@@ -3,6 +3,8 @@ uvicorn[standard]==0.34.0
 python-multipart==0.0.20
 SQLAlchemy==2.0.36
 psycopg[binary]==3.2.3
+psycopg2-binary==2.9.6
+alembic==1.9.2
 pydantic-settings==2.7.1
 ai-edge-litert==2.1.5
 pillow==11.0.0
